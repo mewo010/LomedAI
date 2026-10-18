@@ -68,7 +68,7 @@
 
 ### דרישות מקדימות לפיתוח מקומי באנדרואיד
 - [Node.js 22+ (LTS)](https://nodejs.org/)
-- [Java JDK 17](https://adoptium.net/)
+- [Java JDK 21](https://adoptium.net/)
 - [Android Studio](https://developer.android.com/studio) מותקן עם Android SDK Command-line Tools.
 
 ### פקודות סנכרון ובנייה
