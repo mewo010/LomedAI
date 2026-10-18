@@ -76,12 +76,13 @@ jobs:
       - name: Configure Automatic Render Server URL
         run: |
           RENDER_URL="${{ secrets.RENDER_API_URL || vars.RENDER_API_URL || 'https://lomedai.onrender.com' }}"
-          echo "Setting automatic Render server URL for APK: $RENDER_URL"
-          cat <<EOF > public/config.js
-          window.LOMED_CONFIG = {
-            renderApiUrl: "$RENDER_URL"
-          };
-          EOF
+          echo "Baking Render API URL into Android APK: $RENDER_URL"
+          cat > public/config.js << EOF
+window.LOMED_CONFIG = {
+  renderApiUrl: "$RENDER_URL"
+};
+EOF
+          echo "Generated public/config.js:"
           cat public/config.js
 
       - name: Initialize or Sync Capacitor Android Project

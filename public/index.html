@@ -490,13 +490,14 @@
 
       // 2. Automatically detect if running inside Android Capacitor app
       const isNativeApp = 
-        window.Capacitor !== undefined ||
+        (window.Capacitor !== undefined && typeof window.Capacitor.isNativePlatform === 'function' ? window.Capacitor.isNativePlatform() : window.Capacitor !== undefined) ||
         window.location.protocol === 'capacitor:' ||
         window.location.protocol === 'file:' ||
+        (window.location.origin && window.location.origin.includes('capacitor://')) ||
         (window.location.hostname === 'localhost' && window.location.port === '') ||
-        (window.location.origin && window.location.origin.includes('capacitor://'));
+        (window.location.hostname === 'localhost' && window.location.protocol === 'https:');
 
-      // In Android native app, automatically connect directly to the Render server
+      // In Android native app, automatically route all requests directly to the Render backend
       if (isNativeApp) {
         const defaultRenderUrl = (window.LOMED_CONFIG && window.LOMED_CONFIG.renderApiUrl)
           ? window.LOMED_CONFIG.renderApiUrl.trim().replace(/\/$/, '')
@@ -504,7 +505,7 @@
         return defaultRenderUrl;
       }
 
-      // 3. Web browser on Render or local dev server
+      // 3. Web browser on Render (https://lomedai.onrender.com) or local dev server (http://localhost:3000)
       return '';
     }
 
