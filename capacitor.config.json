@@ -1,6 +1,6 @@
 {
   "appId": "com.lomed.schoolcompanion",
-  "appName": "לומד - מחברות ושיעורי בית",
+  "appName": "Lomed",
   "webDir": "public",
   "bundledWebRuntime": false,
   "server": {
