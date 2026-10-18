@@ -67,7 +67,7 @@
 הפרויקט מוגדר עם Capacitor ב-`capacitor.config.json` כאשר נכסי הווב מוזנים מתיקיית `public/`.
 
 ### דרישות מקדימות לפיתוח מקומי באנדרואיד
-- [Node.js 20+](https://nodejs.org/)
+- [Node.js 22+ (LTS)](https://nodejs.org/)
 - [Java JDK 17](https://adoptium.net/)
 - [Android Studio](https://developer.android.com/studio) מותקן עם Android SDK Command-line Tools.
 
