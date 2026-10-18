@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Lomed</string>
+    <string name="title_activity_main">Lomed</string>
+    <string name="package_name">com.lomed.schoolcompanion</string>
+    <string name="custom_url_scheme">com.lomed.schoolcompanion</string>
+</resources>
