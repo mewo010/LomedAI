@@ -14,6 +14,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
+  <!-- Client Runtime Configuration (Render API auto-connect) -->
+  <script src="config.js"></script>
+
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -477,12 +480,31 @@
     let notes = [];
     let selectedFiles = [];
 
-    // Base API URL: uses localStorage or relative root
+    // Base API URL: automatically connects to Render server for Android APK, or relative for web
     function getApiBase() {
+      // 1. Prioritize manual user override if explicitly saved in settings
       const customUrl = localStorage.getItem('lomed_api_url');
       if (customUrl && customUrl.trim()) {
         return customUrl.trim().replace(/\/$/, '');
       }
+
+      // 2. Automatically detect if running inside Android Capacitor app
+      const isNativeApp = 
+        window.Capacitor !== undefined ||
+        window.location.protocol === 'capacitor:' ||
+        window.location.protocol === 'file:' ||
+        (window.location.hostname === 'localhost' && window.location.port === '') ||
+        (window.location.origin && window.location.origin.includes('capacitor://'));
+
+      // In Android native app, automatically connect directly to the Render server
+      if (isNativeApp) {
+        const defaultRenderUrl = (window.LOMED_CONFIG && window.LOMED_CONFIG.renderApiUrl)
+          ? window.LOMED_CONFIG.renderApiUrl.trim().replace(/\/$/, '')
+          : 'https://lomedai.onrender.com';
+        return defaultRenderUrl;
+      }
+
+      // 3. Web browser on Render or local dev server
       return '';
     }
 
@@ -1122,7 +1144,11 @@
     // Settings Modal
     function openSettingsModal() {
       document.getElementById('settings-modal').classList.remove('hidden');
-      document.getElementById('settings-api-url').value = localStorage.getItem('lomed_api_url') || '';
+      const saved = localStorage.getItem('lomed_api_url') || '';
+      const defaultUrl = (window.LOMED_CONFIG && window.LOMED_CONFIG.renderApiUrl) || 'https://lomedai.onrender.com';
+      const input = document.getElementById('settings-api-url');
+      input.value = saved;
+      input.placeholder = defaultUrl;
     }
 
     function closeSettingsModal() {

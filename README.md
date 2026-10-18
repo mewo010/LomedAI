@@ -35,6 +35,10 @@
 | :--- | :--- |
 | `RENDER_DEPLOY_HOOK` | כתובת ה-Deploy Hook מלוח הבקרה של Render (ראו סעיף פריסה ב-Render להלן). |
 | `GEMINI_API_KEY` | מפתח ה-API האישי שלכם מ-[Google AI Studio](https://aistudio.google.com/). |
+| `RENDER_API_URL` | *(אופציונלי)* כתובת השרת שלכם ב-Render (ברירת מחדל: `https://lomedai.onrender.com`). מוזרק אוטומטית ל-APK כדי שהמשתמש לא יצטרך להזין דבר בהגדרות! |
+
+> **חיבור אוטומטי מלא ל-Render באנדרואיד:**  
+> אפליקציית האנדרואיד מזהה אוטומטית שהיא רצה במובייל ומתחברת ישירות לשרת ה-Render ללא צורך בהזנת כתובת ע״י המשתמש בהגדרות!
 
 > **הערה לגבי הרשאות GitHub Actions:**  
 > תחת **Settings** > **Actions** > **General** > **Workflow permissions**, וודאו שמסומן **Read and write permissions** כדי שפעולת `github-release` תוכל ליצור Releases ולצרף את קובץ ה-APK.
