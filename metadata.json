@@ -1,0 +1,6 @@
+{
+  "name": "Lomed - Hebrew School Notes & Homework Companion",
+  "description": "AI-powered daily Hebrew school companion that transcribes handwritten notes, summarizes lessons, and organizes homework tasks in an RTL dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

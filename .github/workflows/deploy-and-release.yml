@@ -1,0 +1,162 @@
+name: Deploy to Render and Release Android APK
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Custom Release Tag (e.g., v1.0.1)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  # -------------------------------------------------------------------------
+  # Job 1: Trigger Render Deployment via Deploy Hook
+  # -------------------------------------------------------------------------
+  deploy-render:
+    name: Deploy Backend to Render
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render Deploy Hook
+        run: |
+          if [ -z "${{ secrets.RENDER_DEPLOY_HOOK }}" ]; then
+            echo "::warning ::RENDER_DEPLOY_HOOK secret is not set. Skipping Render deployment trigger."
+          else
+            echo "Triggering deployment on Render..."
+            response=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}")
+            body=$(echo "$response" | sed -e '$d')
+            http_status=$(echo "$response" | tail -n1 | cut -d':' -f2)
+
+            echo "Response: $body"
+            echo "Status Code: $http_status"
+
+            if [ "$http_status" -ge 200 ] && [ "$http_status" -lt 300 ]; then
+              echo "✅ Render deployment successfully triggered!"
+            else
+              echo "❌ Render deploy hook failed with status $http_status"
+              exit 1
+            fi
+          fi
+
+  # -------------------------------------------------------------------------
+  # Job 2: Build Android APK with Capacitor & Gradle
+  # -------------------------------------------------------------------------
+  build-apk:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Node Dependencies
+        run: npm ci || npm install
+
+      - name: Set up Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Initialize or Sync Capacitor Android Project
+        run: |
+          if [ ! -d "android" ]; then
+            echo "Adding Android platform to Capacitor..."
+            npx cap add android
+          fi
+          echo "Syncing web assets to Capacitor Android..."
+          npx cap sync android
+
+      - name: Grant Execute Permission to Gradle Wrapper
+        run: chmod +x android/gradlew
+
+      - name: Compile Debug APK with Gradle
+        run: |
+          cd android
+          ./gradlew assembleDebug --stacktrace
+          cd ..
+
+      - name: Locate and Rename APK
+        run: |
+          mkdir -p build-artifacts
+          APK_PATH=$(find android/app/build/outputs/apk/debug/ -name "*.apk" | head -n 1)
+          if [ -f "$APK_PATH" ]; then
+            echo "Found APK at: $APK_PATH"
+            cp "$APK_PATH" build-artifacts/Lomed-SchoolCompanion-debug.apk
+            ls -la build-artifacts/
+          else
+            echo "❌ Error: Could not find generated .apk file!"
+            exit 1
+          fi
+
+      - name: Upload APK as Workflow Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lomed-android-apk
+          path: build-artifacts/Lomed-SchoolCompanion-debug.apk
+          retention-days: 7
+
+  # -------------------------------------------------------------------------
+  # Job 3: Create GitHub Release and Attach Compiled APK
+  # -------------------------------------------------------------------------
+  github-release:
+    name: Publish GitHub Release with APK
+    needs: [build-apk, deploy-render]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download APK Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lomed-android-apk
+          path: release-assets
+
+      - name: Determine Release Tag
+        id: release_tag
+        run: |
+          if [ -n "${{ github.event.inputs.release_tag }}" ]; then
+            TAG="${{ github.event.inputs.release_tag }}"
+          else
+            TAG="v1.0.${{ github.run_number }}"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Using Release Tag: $TAG"
+
+      - name: Create GitHub Release and Upload APK Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_tag.outputs.tag }}
+          name: "Lomed School Companion ${{ steps.release_tag.outputs.tag }}"
+          body: |
+            ## 🎒 לוֹמֵד - שחרור גרסה ${{ steps.release_tag.outputs.tag }}
+            
+            גרסה חדשה של אפליקציית בית הספר העברית 'לומד' מוכנה להורדה!
+            
+            ### 📱 מה חדש בגרסה זו?
+            - **סריקה ופענוח כתב יד עברי:** שילוב מודל `gemini-2.5-flash` באמצעות SDK הרשמי של `@google/genai`.
+            - **חילוץ שיעורי בית ומטלות:** זיהוי אוטומטי של תרגילים, עמודי ספר ותאריכי הגשה עם צ'קבוקס אינטראקטיבי.
+            - **סיכומי שיעור מובנים:** הפקת נקודות עיקריות, מושגי מפתח ותמלול מלא של דפי המחברת.
+            - **פריסת RTL מלאה:** מותאם לעברית עם גופני Heebo ו-Rubik.
+            - **קובץ התקנה לאנדרואיד:** ניתן להוריד ולהתקין ישירות את קובץ ה-APK המצורף.
+            
+            ### 📦 קבצים להורדה
+            - `Lomed-SchoolCompanion-debug.apk` (קובץ התקנה ישיר לסמארטפונים וטאבלטים מבוססי Android).
+          files: release-assets/Lomed-SchoolCompanion-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
