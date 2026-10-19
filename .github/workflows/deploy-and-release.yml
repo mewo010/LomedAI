@@ -77,11 +77,7 @@ jobs:
         run: |
           RENDER_URL="${{ secrets.RENDER_API_URL || vars.RENDER_API_URL || 'https://lomedai.onrender.com' }}"
           echo "Baking Render API URL into Android APK: $RENDER_URL"
-          cat > public/config.js << EOF
-window.LOMED_CONFIG = {
-  renderApiUrl: "$RENDER_URL"
-};
-EOF
+          printf 'window.LOMED_CONFIG = {\n  renderApiUrl: "%s"\n};\n' "$RENDER_URL" > public/config.js
           echo "Generated public/config.js:"
           cat public/config.js
 
